@@ -151,11 +151,39 @@ Verification:
 
 Note on `fintech-gateway:v1.0`: rebuilt after adding `.dockerignore` → new image ID `df5572c37e22` (was `e18e54b8c760`). Same single layer `sha256:75c137ae…`, same Created, same Cmd — only BuildKit's build-provenance metadata differs. The Docker-task container `fintech-gateway` was run from `e18e54b8c760`. Each Jenkins build will produce another ID for the same content.
 
+## Phase 1 (task) — Git release branching and annotated tag (2026-10-26)
+
+User ran the Git commands manually (first attempt didn't create a repo in this folder; re-run from `git init -b main`). Remote: `https://github.com/Shivam-Kapure/devops-ese.git` (was empty before push).
+
+Read-only verification:
+```
+git status        -> On branch main, up to date with 'origin/main', working tree clean
+git branch -a     -> * main, release-v1.0, remotes/origin/main, remotes/origin/release-v1.0
+git log --oneline --graph --decorate --all
+*   7ace9c2 (HEAD -> main, tag: v1.0.0-final, origin/main) Merge release-v1.0 into main
+|\
+| * c697400 (origin/release-v1.0, release-v1.0) Add gateway.conf: SETTLEMENT_CORE=ACTIVE
+|/
+* 3a1ade2 Initial project setup: UPI settlement app, Docker, Kubernetes, Jenkins, Terraform
+git cat-file -t v1.0.0-final -> tag          (annotated)
+git tag -n        -> v1.0.0-final    Release v1.0.0-final: settlement core active
+git show v1.0.0-final -> tag object (Tagger Shivam-Kapure, 2026-10-26 10:04:32 +0530) -> merge commit 7ace9c2 (parents 3a1ade2, c697400), adds gateway.conf
+git show main:gateway.conf -> SETTLEMENT_CORE=ACTIVE   (blob 23 bytes)
+git merge-base --is-ancestor release-v1.0 main -> exit 0 (merged)
+git log --all -- gateway.conf -> only c697400 on release-v1.0
+```
+GitHub (`git ls-remote origin`): `refs/heads/main` 7ace9c2, `refs/heads/release-v1.0` c697400, `refs/tags/v1.0.0-final` 639e39f (tag object) -> `^{}` 7ace9c2 — identical to local. Raw `main/gateway.conf` from GitHub → HTTP 200, `SETTLEMENT_CORE=ACTIVE`.
+
+## Phase 3 (task) — Jenkins preparation (2026-10-26)
+
+- Jenkinsfile changed for "Pipeline script from SCM": removed `dir('D:\\devops lab ese')` wrappers so every stage builds the files Jenkins checks out from `https://github.com/Shivam-Kapure/devops-ese.git` (`*/main`); Stage 1 prints `GIT_URL @ GIT_COMMIT`. Stage logic unchanged. Needs commit + push by user.
+- Agent prerequisites (LocalSystem): `D:\GIT\Git\cmd\git.exe` on machine PATH ✔; `docker-buildx.exe` in system-wide `C:\Program Files\Docker\cli-plugins` ✔; no LocalSystem Docker config → default `npipe:////./pipe/docker_engine` (responded in audit) — real confirmation only from the Jenkins build.
+
 ## Task status
 
 | Task | Marks | Result | Evidence |
 |---|---:|---|---|
-| Git release branching and annotated tag | 2 | PENDING | — |
+| Git release branching and annotated tag | 2 | PASS | `release-v1.0` (c697400) adds gateway.conf; merged `--no-ff` into main (7ace9c2); `v1.0.0-final` is type `tag` on 7ace9c2; same refs on GitHub |
 | Jira sprint completion | 1 | PENDING | — |
 | Jenkins Declarative Pipeline | 2 | PENDING | — |
 | Docker image and container | 2 | PASS | Image `e18e54b8c760` inspected; container `fintech-gateway` Exited (0) with log `Payment Settlement Active` (exit is expected for the required `echo` CMD) |
