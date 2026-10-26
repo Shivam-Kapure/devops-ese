@@ -1,0 +1,25 @@
+# Local run of the UPI settlement app (backend API + nginx frontend).
+# Open http://localhost:8090 after `docker compose up -d --build`.
+name: upi-settlement
+
+services:
+  settlement-backend:
+    build:
+      context: ./backend
+      target: runtime
+    image: upi-settlement-backend:v1.0
+    container_name: upi-settlement-backend
+    environment:
+      SETTLEMENT_CORE: ACTIVE
+    expose:
+      - "5000"
+
+  settlement-frontend:
+    build: ./frontend
+    image: upi-settlement-frontend:v1.0
+    container_name: upi-settlement-frontend
+    ports:
+      - "8090:80"
+    depends_on:
+      settlement-backend:
+        condition: service_healthy

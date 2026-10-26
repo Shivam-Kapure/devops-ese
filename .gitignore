@@ -1,0 +1,9 @@
+# Terraform working data and state (generated locally, not source)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Python
+__pycache__/
+.pytest_cache/

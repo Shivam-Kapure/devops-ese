@@ -1,0 +1,137 @@
+# UPI settlement app (backend API + nginx frontend), deployed next to the required
+# payment-deployment / payment-service. Labels deliberately avoid `tier: payment`
+# so the required Service never selects these Pods.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  labels:
+    app: upi-settlement
+data:
+  SETTLEMENT_CORE: "ACTIVE"   # mirrors gateway.conf
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-backend
+  labels:
+    app: upi-settlement
+    component: backend
+spec:
+  # Single replica: the demo ledger is in memory, so more replicas would each hold separate data.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: upi-settlement
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: upi-settlement
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: upi-settlement-backend:v1.0
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: gateway-config
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: settlement-backend   # the name nginx proxies to
+  labels:
+    app: upi-settlement
+    component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: upi-settlement
+    component: backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-frontend
+  labels:
+    app: upi-settlement
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: upi-settlement
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: upi-settlement
+        component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: upi-settlement-frontend:v1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: settlement-frontend
+  labels:
+    app: upi-settlement
+    component: frontend
+spec:
+  type: NodePort
+  selector:
+    app: upi-settlement
+    component: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30092

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UPI Settlement Console</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>UPI Settlement Console</h1>
+      <p class="sub">Instant payment settlement engine &middot; local demonstration, no real UPI network</p>
+    </div>
+    <div id="health" class="pill pill-unknown">Checking core&hellip;</div>
+  </header>
+
+  <main>
+    <section class="stats" aria-label="Ledger summary">
+      <div class="stat"><span class="label">Payments</span><span id="s-total" class="value">0</span></div>
+      <div class="stat"><span class="label">Pending</span><span id="s-pending" class="value">0</span><span id="s-pending-amt" class="amt">&#8377;0.00</span></div>
+      <div class="stat"><span class="label">Settled</span><span id="s-settled" class="value">0</span><span id="s-settled-amt" class="amt">&#8377;0.00</span></div>
+      <div class="stat"><span class="label">Batches</span><span id="s-batches" class="value">0</span></div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Initiate payment</h2>
+        <form id="pay-form" autocomplete="off">
+          <label>Payer UPI ID<input name="payer_vpa" required placeholder="asha@okaxis"></label>
+          <label>Payee UPI ID<input name="payee_vpa" required placeholder="merchant@ybl"></label>
+          <label>Amount (&#8377;)<input name="amount" required inputmode="decimal" placeholder="250.00"></label>
+          <label>Note<input name="note" maxlength="80" placeholder="Order #1042"></label>
+          <div class="row">
+            <button type="submit">Send payment</button>
+            <button type="button" id="seed" class="secondary">Add 5 sample payments</button>
+          </div>
+          <p id="pay-msg" class="msg" role="status"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Settlement</h2>
+        <p class="hint">Settles every PENDING payment into one batch with net totals per payee bank.</p>
+        <button id="settle">Run settlement batch</button>
+        <p id="settle-msg" class="msg" role="status"></p>
+        <div id="batches"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="row spread">
+        <h2>Transactions</h2>
+        <select id="filter" aria-label="Filter by status">
+          <option value="">All</option>
+          <option value="PENDING">Pending</option>
+          <option value="SETTLED">Settled</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Txn ID</th><th>Payer</th><th>Payee</th><th class="num">Amount</th><th>Status</th><th>Batch</th><th>Created (UTC)</th></tr></thead>
+          <tbody id="txns"><tr><td colspan="7" class="empty">No payments yet</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

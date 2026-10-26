@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-deployment
+  labels:
+    tier: payment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: payment
+  template:
+    metadata:
+      labels:
+        tier: payment
+    spec:
+      containers:
+        - name: payment
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  labels:
+    tier: payment
+spec:
+  type: NodePort
+  selector:
+    tier: payment
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30091

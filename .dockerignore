@@ -1,0 +1,9 @@
+# Keep the root build context (fintech-gateway image) small; the root Dockerfile copies nothing.
+.git
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+backend
+frontend
+k8s
